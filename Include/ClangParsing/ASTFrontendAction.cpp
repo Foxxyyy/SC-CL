@@ -25,6 +25,7 @@ void SCCL::ASTFrontendAction::AddDefines(Preprocessor &PP)
 		"\n#define PLATFORM_X360 0"
 		"\n#define PLATFORM_PS3 1"
 		"\n#define PLATFORM_PC 2"
+        "\n#define PLATFORM_SWITCH 3"
 
 		"\n#define TARGET_GTAIV 0"
 		"\n#define TARGET_GTAV 1"
@@ -34,6 +35,7 @@ void SCCL::ASTFrontendAction::AddDefines(Preprocessor &PP)
 		"\n#define FILETYPE_YSC 1"
 		"\n#define FILETYPE_CSC 2"
 		"\n#define FILETYPE_SCO 3"
+        "\n#define FILETYPE_WSC 4"
 
 		"\n#define SUBTARGET_TBOGT 0"
 		"\n#define SUBTARGET_TLAD 1";
@@ -50,6 +52,11 @@ void SCCL::ASTFrontendAction::AddDefines(Preprocessor &PP)
 				"\n#define PLATFORM PLATFORM_PS3"
 				"\n#define ENDIAN ENDIAN_BIG";
 			break;
+        case P_SWITCH:
+            preDefines +=
+				"\n#define PLATFORM PLATFORM_SWITCH"
+                "\n#define ENDIAN ENDIAN_LITTLE";
+            break;
 		case P_PC:
 			preDefines +=
 				"\n#define PLATFORM PLATFORM_PC"

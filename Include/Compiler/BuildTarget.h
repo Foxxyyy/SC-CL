@@ -3,7 +3,8 @@ typedef enum
 {
 	P_XBOX,
 	P_PSX,
-	P_PC
+	P_PC,
+	P_SWITCH
 } Platform;
 
 typedef enum

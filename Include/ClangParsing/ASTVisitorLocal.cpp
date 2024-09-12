@@ -663,7 +663,7 @@ namespace SCCL
 #pragma region String
 
             //isAddr is false on memory functions because we dont want to force addressof
-        case JoaatCasedConst("memcpyold"):
+        case JoaatCasedConst("memcpy"):
         {
             ChkHashCol("memcpy");
             if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
@@ -779,7 +779,7 @@ namespace SCCL
                 Throw("memcpy must have signature \"extern __intrinsic void memcpy(void* dst, void* src, int len);\"", TheRewriter, callee->getSourceRange());
             return true;
         } break;
-        case JoaatCasedConst("memsetold"):
+        case JoaatCasedConst("memset"):
         {
             ChkHashCol("memset");
             if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isCharType() && argArray[2]->getType()->isIntegerType())
@@ -1477,9 +1477,9 @@ namespace SCCL
                 return true;
             }
         } break;
-        case JoaatCasedConst("bitTest"):
+        case JoaatCasedConst("bit_test"):
         {
-            ChkHashCol("bitTest");
+            ChkHashCol("bit_test");
             if (argCount == 2 && callee->getReturnType()->isBooleanType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
             {
                 clang::Expr::EvalResult result;
@@ -1493,13 +1493,13 @@ namespace SCCL
                         return true;
                     }
                 }
-                Throw("bitIndex argument for bitTest must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
+                Throw("bitIndex argument for bit_test must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
             }
-            Throw("bitTest must have signature \"extern __intrinsic bool bitTest(int value, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
+            Throw("bit_test must have signature \"extern __intrinsic bool bit_test(int value, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
         } break;
-        case JoaatCasedConst("bitSet"):
+        case JoaatCasedConst("bit_set"):
         {
-            ChkHashCol("bitSet");
+            ChkHashCol("bit_set");
             if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
             {
                 clang::Expr::EvalResult result;
@@ -1513,13 +1513,13 @@ namespace SCCL
                         return true;
                     }
                 }
-                Throw("bitIndex argument for bitSet must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
+                Throw("bitIndex argument for bit_set must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
             }
-            Throw("bitSet must have signature \"extern __intrinsic bool bitSet(int* address, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
+            Throw("bit_set must have signature \"extern __intrinsic bool bit_set(int* address, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
         } break;
-        case JoaatCasedConst("bitReset"):
+        case JoaatCasedConst("bit_reset"):
         {
-            ChkHashCol("bitReset");
+            ChkHashCol("bit_reset");
             if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
             {
                 clang::Expr::EvalResult result;
@@ -1533,13 +1533,13 @@ namespace SCCL
                         return true;
                     }
                 }
-                Throw("bitIndex argument for bitReset must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
+                Throw("bitIndex argument for bit_reset must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
             }
-            Throw("bitReset must have signature \"extern __intrinsic bool bitReset(int* address, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
+            Throw("bit_reset must have signature \"extern __intrinsic bool bit_reset(int* address, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
         } break;
-        case JoaatCasedConst("bitFlip"):
+        case JoaatCasedConst("bit_flip"):
         {
-            ChkHashCol("bitFlip");
+            ChkHashCol("bit_flip");
             if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
             {
                 clang::Expr::EvalResult result;
@@ -1553,9 +1553,9 @@ namespace SCCL
                         return true;
                     }
                 }
-                Throw("bitIndex argument for bitFlip must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
+                Throw("bitIndex argument for bit_flip must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
             }
-            Throw("bitFlip must have signature \"extern __intrinsic bool bitFlip(int* address, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
+            Throw("bit_flip must have signature \"extern __intrinsic bool bit_flip(int* address, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
         } break;
         case JoaatCasedConst("vector3ToVector2"):
         {

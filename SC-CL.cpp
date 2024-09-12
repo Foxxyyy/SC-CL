@@ -84,6 +84,7 @@ namespace SCCL
 				switch (scriptData->getBuildPlatform())
 				{
 					case P_XBOX:
+					case P_SWITCH:
 					case P_PSX:
 					{
 						CompileRDR c(*scriptData, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);
@@ -91,7 +92,7 @@ namespace SCCL
 					}
 					break;
 					default:
-						Throw("Red Dead Redemption is only supported on Xbox360 and PS3");
+						Throw("Red Dead Redemption is only supported on Xbox 360, PS3 & Nintendo Switch");
 				}
 			}
 			break;
@@ -182,7 +183,6 @@ namespace SCCL
 		if (SourcePaths.size() > 0)
 		{
 			//TODO: this is temporary. script name should be set from the file that the main function is in
-
 			string outDir = Option_OutputDirectory.size() ? Option_OutputDirectory : Utils::IO::GetDir(SourcePaths[0]);
 
 			string scriptName = (Option_OutputFileName != "" ? Option_OutputFileName : GetBaseNameFromDir(SourcePaths[0]));
@@ -190,7 +190,6 @@ namespace SCCL
 
 			stackWidth = scriptData->getStackWidth();
 			ProcessingFailed = Tool.run(newFrontendActionFactory<ASTFrontendAction>().get());
-
 
 			/// ClangTool::run accepts a FrontendActionFactory, which is then used to
 			/// create new objects implementing the FrontendAction interface. Here we use
@@ -337,7 +336,6 @@ namespace SCCL
 int main(int argc, const char **argv)
 {
 	llvm::errs() << "Starting SC-CL " << VERSION << " running Clang 14.0.5\n";
-
 	SCCL::globalDirectory = Utils::IO::GetDir(string(argv[0]));
 
     llvm::cl::VersionPrinterTy versionPrinter = [&] (llvm::raw_ostream& os) -> void

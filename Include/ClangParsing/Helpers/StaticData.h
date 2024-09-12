@@ -9,7 +9,7 @@ class Script;
 class FunctionData;
 class StaticData : public std::enable_shared_from_this<StaticData>
 {
-private:
+public:
 	size_t _size;
 	int _index = -1;//-1 means unused
 	std::vector<uint8_t> _initialisation;
@@ -44,7 +44,6 @@ private:
 		}
 	}
 
-public:
 	StaticData(std::string name, size_t size): _size(size), _name(std::move(name))
 	{
 		assert(size > 0 && "Size must be positive");

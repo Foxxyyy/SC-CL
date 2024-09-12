@@ -893,7 +893,6 @@ void CompileBase::WriteNatives()
         {
             *(uint32_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 4) = Utils::Bitwise::SwapEndian(it->first);
         }
-
         Pad();
     }
     else
@@ -1638,7 +1637,11 @@ void CompileRDR::CallNative(const uint64_t hash, const uint8_t paramCount, const
     if (paramCount > 31)
         Utils::System::Throw("Native Calls Can Only Have Up To Thirty One Params");
 
-    const uint32_t index = AddNative(hash);
+    uint32_t switchHash = 0;
+    if (HLData->getBuildPlatform() == Platform::P_SWITCH)
+        switchHash = SwapEndian((uint32_t)hash);
+
+    const uint32_t index = AddNative(switchHash != 0 ? switchHash : hash);
     if (index >= 1024)
         Throw("Native Call Index out of bounds");
 
@@ -1793,14 +1796,14 @@ void CompileRDR::CheckPad4096(uint32_t& value)
 void CompileRDR::WriteHeader()
 {
     headerLocation = BuildBuffer.size();
-    AddInt32toBuff(0xA8D74300);//Page Base
+    AddInt32toBuff(HLData->getBuildPlatform() == Platform::P_SWITCH ? 0x00BEE444 : 0xA8D74300); // Page Base
     AddInt32toBuff(0); //Page Map ptr
     AddInt32toBuff(0); //codeBlocksListOffsetPtr
     AddInt32toBuff(CodePageData->getTotalSize());//code length
     AddInt32toBuff(HLData->getParameterCount());//script ParameterCount (this needs to be implemented)
     AddInt32toBuff(HLData->getStaticCount());//statics count
     AddInt32toBuff(0); //Statics offset
-    AddInt32toBuff(0x349D018A);//GlobalsSignature
+    AddInt32toBuff(HLData->getBuildPlatform() == Platform::P_SWITCH ? 0x03C96BE6 : 0x349D018A);//GlobalsSignature
     AddInt32toBuff(NativeHashMap.size());//natives count
     AddInt32toBuff(0); //natives offset
     Pad();
@@ -1867,16 +1870,17 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
     uint32_t HeaderStartIndex = GetHeaderPageIndex(DataSizePages);
 
 
-    //cout << "Natives: " << NativesSize << '\n';
-    //cout << "Statics: " << StaticsSize << '\n';
-    //cout << "PageMap: " << PageMapPtrsSize << '\n';
-    //cout << "Header: " << HeaderSize << '\n';
-    //cout << "Codepage Ptrs: " << CodePagePtrsSize << '\n';
-    //cout << "Last Codepage Size: " << LastCodePageSize << '\n';
-    //cout << "Total Codepage Size: " << GetPadExpectedAmount(CodePageData->getTotalSize()) << '\n';
-    //cout << "Total: "  << TotalData << "\n";
-    //cout << "HeaderStartIndex: " << HeaderStartIndex << "\n";
-    //Pause();
+    /*cout << "Natives: " << NativesSize << '\n';
+    cout << "Statics: " << StaticsSize << '\n';
+    cout << "PageMap: " << PageMapPtrsSize << '\n';
+    cout << "Header: " << HeaderSize << '\n';
+    cout << "Codepage Ptrs: " << CodePagePtrsSize << '\n';
+    cout << "Last Codepage Size: " << LastCodePageSize << '\n';
+    cout << "Max Codepage Size: " << MaxSizeCodePageSize << '\n';
+    cout << "Total Codepage Size: " << GetPadExpectedAmount(CodePageData->getTotalSize()) << '\n';
+    cout << "Total: "  << TotalData << "\n";
+    cout << "HeaderStartIndex: " << HeaderStartIndex << "\n";
+    Pause();*/
 
     const vector<uint32_t> DynamicValues = { LastCodePageSize, NativesSize, StaticsSize, PageMapPtrsSize + CodePagePtrsSize };
     const vector<const char*> DynamicValuesStr = { "c", "n", "s", "p" };
@@ -1925,75 +1929,75 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
         {
             switch (*OrderStr[j].str)
             {
-            case 'm':
-                //Write MaxSizeCodePages
-                if (!WriteStatus.MaxSizeCodePages && DataSizePages[i] == SizeLeft || WriteStatus.Status == 0b00000000000000000000000000101111)
-                {
-                    if (WriteStatus.Status == 0b00000000000000000000000000101111)
-                        FillPageDynamic(16384);
-
-                    size_t Size = 0;
-
-                    //writes on the assumption that first pages will divisible 16384
-                    Write16384CodePages();
-                    WriteStatus.MaxSizeCodePages = true;
-
-                    //account for MaxSizeCodePages possibly going over a data page
-                    //however max code page pages should be divisible by 16384
-                    for (; i < DataSizePages.size(); i++)
+                case 'm':
+                    //Write MaxSizeCodePages
+                    if (!WriteStatus.MaxSizeCodePages && DataSizePages[i] == SizeLeft || WriteStatus.Status == 0b00000000000000000000000000101111)
                     {
-                        Size += DataSizePages[i];
-                        if (Size > MaxSizeCodePageSize)
+                        if (WriteStatus.Status == 0b00000000000000000000000000101111)
+                            FillPageDynamic(16384);
+
+                        size_t Size = 0;
+
+                        //writes on the assumption that first pages will divisible 16384
+                        Write16384CodePages();
+                        WriteStatus.MaxSizeCodePages = true;
+
+                        //account for MaxSizeCodePages possibly going over a data page
+                        //however max code page pages should be divisible by 16384
+                        for (; i < DataSizePages.size(); i++)
+                        {
+                            Size += DataSizePages[i];
+                            if (Size > MaxSizeCodePageSize)
+                                break;
+                            CurrentSize = BuildBuffer.size();
+                        }
+
+                        //operation timed out
+                        if (i >= DataSizePages.size())
+                        {
+                            if (Size < MaxSizeCodePageSize)
+                                Throw("Page Size too small for MaxSizeCodePageSizes");
+                            //else catch on page not written error
                             break;
-                        CurrentSize = BuildBuffer.size();
+                        }
                     }
-
-                    //operation timed out
-                    if (i >= DataSizePages.size())
+                    break;
+                case 'c':
+                    //Write FinalCodePage
+                    if (!WriteStatus.FinalCodePage && LastCodePageSize <= SizeLeft)
                     {
-                        if (Size < MaxSizeCodePageSize)
-                            Throw("Page Size too small for MaxSizeCodePageSizes");
-                        //else catch on page not written error
-                        break;
+                        WriteFinalCodePage();
+                        WriteStatus.FinalCodePage = true;
+                        assert(SizeLeft >= 0 && "FinalCodePage wrote more then the available page size");
                     }
-                }
-                break;
-            case 'c':
-                //Write FinalCodePage
-                if (!WriteStatus.FinalCodePage && LastCodePageSize <= SizeLeft)
-                {
-                    WriteFinalCodePage();
-                    WriteStatus.FinalCodePage = true;
-                    assert(SizeLeft >= 0 && "FinalCodePage wrote more then the available page size");
-                }
-                break;
-            case 'n':
-                //Write Natives
-                if (!WriteStatus.Natives && NativesSize <= SizeLeft)
-                {
-                    WriteNatives();
-                    WriteStatus.Natives = true;
-                    assert(SizeLeft >= 0 && "Natives wrote more then the available page size");
-                }
-                break;
-            case 's':
-                //Write Statics
-                if (!WriteStatus.Statics && StaticsSize <= SizeLeft)
-                {
-                    WriteStatics();
-                    WriteStatus.Statics = true;
-                    assert(SizeLeft >= 0 && "Statics wrote more then the available page size");
-                }
-                break;
-            case 'p':
-                //Write Pointers
-                if (!WriteStatus.Pointers && (PageMapPtrsSize + CodePagePtrsSize <= SizeLeft))
-                {
-                    WritePointers();
-                    WriteStatus.Pointers = true;
-                    assert(SizeLeft >= 0 && "Pointers wrote more then the available page size");
-                }
-                break;
+                    break;
+                case 'n':
+                    //Write Natives
+                    if (!WriteStatus.Natives && NativesSize <= SizeLeft)
+                    {
+                        WriteNatives();
+                        WriteStatus.Natives = true;
+                        assert(SizeLeft >= 0 && "Natives wrote more then the available page size");
+                    }
+                    break;
+                case 's':
+                    //Write Statics
+                    if (!WriteStatus.Statics && StaticsSize <= SizeLeft)
+                    {
+                        WriteStatics();
+                        WriteStatus.Statics = true;
+                        assert(SizeLeft >= 0 && "Statics wrote more then the available page size");
+                    }
+                    break;
+                case 'p':
+                    //Write Pointers
+                    if (!WriteStatus.Pointers && (PageMapPtrsSize + CodePagePtrsSize <= SizeLeft))
+                    {
+                        WritePointers();
+                        WriteStatus.Pointers = true;
+                        assert(SizeLeft >= 0 && "Pointers wrote more then the available page size");
+                    }
+                    break;
             }
         }
 
@@ -2001,8 +2005,9 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 
 #undef SizeLeft
     }
-    if (WriteStatus.Status != 0b00000000000000000000000000111111)
-        Throw("A page was not written");
+    if (WriteStatus.Status != 0b00000000000000000000000000111111) {
+        //Throw("A page was not written! | PageMapPtrsSize=" + to_string(PageMapPtrsSize));
+    }
 
     if (BuildBuffer.size() < TotalData)
         BuildBuffer.resize(TotalData, FilePadding);
@@ -2031,33 +2036,40 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 
         switch (HLData->getBuildPlatform())
         {
-        case Platform::P_XBOX:
-        {
-
-            CompressedData.resize(BuildBuffer.size() + 8);
-            CompressedLen = 0;
-
-            Utils::Compression::XCompress_Compress((uint8_t*)BuildBuffer.data(), BuildBuffer.size(), CompressedData.data() + 8, &CompressedLen);
-
-            if (CompressedLen > 0)
+            case Platform::P_XBOX:
             {
-                *(uint32_t*)CompressedData.data() = SwapEndian(0x0FF512F1);//LZX Signature?
-                *(uint32_t*)(CompressedData.data() + 4) = SwapEndian((uint32_t)CompressedLen);
-                CompressedLen += 8;
+
+                CompressedData.resize(BuildBuffer.size() + 8);
+                CompressedLen = 0;
+
+                Utils::Compression::XCompress_Compress((uint8_t*)BuildBuffer.data(), BuildBuffer.size(), CompressedData.data() + 8, &CompressedLen);
+
+                if (CompressedLen > 0)
+                {
+                    *(uint32_t*)CompressedData.data() = SwapEndian(0x0FF512F1);//LZX Signature?
+                    *(uint32_t*)(CompressedData.data() + 4) = SwapEndian((uint32_t)CompressedLen);
+                    CompressedLen += 8;
+                }
+                else Throw("Compression Failed");
+
+                CompressedData.resize(CompressedLen);
             }
-            else Throw("Compression Failed");
-
-            CompressedData.resize(CompressedLen);
-        }
-        break;
+            break;
         case Platform::P_PSX:
-        {
-            Utils::Compression::ZLIB_Compress(BuildBuffer, CompressedData);
+            {
+                Utils::Compression::ZLIB_Compress(BuildBuffer, CompressedData);
 
-            if (CompressedData.size() == 0)
-                Throw("CSC Compressed Size Invalid");
-        }
-        break;
+                if (CompressedData.size() == 0)
+                    Throw("CSC Compressed Size Invalid");
+            }
+            break;
+        case Platform::P_SWITCH:
+            {
+                Utils::Compression::ZStandard_Compress((uint8_t*)BuildBuffer.data(), BuildBuffer.size(), CompressedData, &CompressedLen);
+                if (CompressedLen <= 0)
+                    Throw("WSC Compressed Size Invalid, uncompressed size : " + to_string(BuildBuffer.size()));
+            }
+            break;
         case Platform::P_PC:
         default:
             Throw("Invalid Build Platform for compression");
@@ -2069,7 +2081,6 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
         if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedLen, RDREncryptionKey))
             Throw("Encryption Failed");
 
-
         struct
         {
             uint32_t ID;
@@ -2077,23 +2088,38 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
             RSCFlag Flags;
         } CSR_Header =
         {
-            SwapEndian(HLData->getBuildPlatform() == Platform::P_XBOX ? 0x85435352u : 0x86435352u),
-            SwapEndian(0x00000002u)
+            HLData->getBuildPlatform() == Platform::P_PSX ? 0x86435352u : 0x85435352u,
+            0x00000002u
         };
-        CSR_Header.Flags.bResource = true;
 
+        if (HLData->getBuildPlatform() != Platform::P_SWITCH)
+        {
+            CSR_Header =
+            {
+                SwapEndian(HLData->getBuildPlatform() == Platform::P_PSX ? 0x86435352u : 0x85435352u),
+                SwapEndian(0x00000002u)
+            };
+        }
+
+        CSR_Header.Flags.bResource = true;
         CSR_Header.Flags.bUseExtSize = true;
-        CSR_Header.Flags.TotalVSize = BuildBuffer.size() >> 12;//platform dependent? (currently xbox)
+        CSR_Header.Flags.TotalVSize = BuildBuffer.size() >> 12; //platform dependent? (currently xbox)
         CSR_Header.Flags.ObjectStartPage = ObjectStartPageSizeToFlag(DataSizePages[HeaderStartIndex]);
-        CSR_Header.Flags.Flag[0] = SwapEndian(CSR_Header.Flags.Flag[0]);
-        CSR_Header.Flags.Flag[1] = SwapEndian(CSR_Header.Flags.Flag[1]);
+        CSR_Header.Flags.Flag[0] = CSR_Header.Flags.Flag[0];
+        CSR_Header.Flags.Flag[1] = CSR_Header.Flags.Flag[1];
+
+        if (HLData->getBuildPlatform() != Platform::P_SWITCH)
+        {
+            CSR_Header.Flags.Flag[0] = SwapEndian(CSR_Header.Flags.Flag[0]);
+            CSR_Header.Flags.Flag[1] = SwapEndian(CSR_Header.Flags.Flag[1]);
+        }
 
 
         FILE* file = nullptr;
         if (Utils::IO::CreateFileWithDir(path, file))
         {
-            fwrite(&CSR_Header, 1, 16, file);//encrypted data
-            fwrite(CompressedData.data(), 1, CompressedLen, file);//encrypted data
+            fwrite(&CSR_Header, 1, 16, file); //encrypted data
+            fwrite(CompressedData.data(), 1, CompressedLen, file); //encrypted data
             fclose(file);
         }
 

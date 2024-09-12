@@ -38,6 +38,7 @@ set(header_list
 	"Include/Compiler/OpcodeConsts.h"
 	"Include/Compression/zconf.h"
 	"Include/Compression/zlib.h"
+	"Include/Compression/zstd.h"
 	"Include/Compression/sal.h"
 	"Include/Compression/SourceAnnotations.H"
 	"Include/Compression/xcompress.h"
@@ -75,6 +76,7 @@ target_link_libraries(SC-CL
 	PUBLIC clangBasic
 	PUBLIC clangASTMatchers
 	PUBLIC zlibstatic
+	PUBLIC libzstd
 	PUBLIC legacy_stdio_definitions
 	PUBLIC xcompress64
 )

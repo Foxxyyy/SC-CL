@@ -179,23 +179,33 @@ public:
 	{
 		return (uint32_t)newStaticCount;
 	}
+
 	void incStaticCount(std::shared_ptr<StaticData> staticData)
 	{
-		//assert(staticData);
 		assert(staticData->getSize() && "incAmount must be positive");
 		newStaticCount += staticData->getSize();
 
 		UsedStatics.push_back(staticData);
 	}
+
 	void addStaticNewDecl(const std::string& name, int size, bool isStaticStorage, bool isPrototype = false)
 	{
 		uint32_t NameHash = Utils::Hashing::JoaatCased(name);
+		auto staticIt = staticMapStatic.find(NameHash);
+		auto externIt = staticMapExtern.find(NameHash);
+
 		if (isStaticStorage)
-			currentStatic = staticMapStatic.insert({ NameHash , std::make_shared<StaticData>(name, size) })->second.get();
+		{
+			if (staticIt == staticMapStatic.end())
+				currentStatic = staticMapStatic.insert({ NameHash , std::make_shared<StaticData>(name, size) })->second.get();
+		}
 		else
 		{
-			currentStatic = staticMapExtern.insert({ NameHash , std::make_shared<StaticData>(name, size) })->second.get();
-			currentStatic->setPrototype(isPrototype);
+			if (externIt == staticMapExtern.end())
+			{
+				currentStatic = staticMapExtern.insert({ NameHash , std::make_shared<StaticData>(name, size) })->second.get();
+				currentStatic->setPrototype(isPrototype);
+			}
 		}
 	}
 	void addStaticLocalNewDecl(const std::string& name, int size, unsigned sourceLoc){

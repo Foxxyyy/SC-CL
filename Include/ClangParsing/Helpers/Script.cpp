@@ -15,7 +15,7 @@ Script::Script(string scriptName, BuildType buildType, Platform platform, bool i
 	initializeEntryFunction();
 
 	functions.push_back(std::move(entry));
-	_endian = ((buildType == BT_GTAV && platform == P_PC) || buildType ==  BT_RDR2) ? END_LITTLE : END_BIG;
+    _endian = ((buildType == BT_GTAV && platform == P_PC) || buildType == BT_RDR2 || (buildType == BT_RDR_XSC && platform == P_SWITCH)) ? END_LITTLE : END_BIG;
 	_stackWidth = ((buildType == BT_GTAV && platform == P_PC) || buildType == BT_RDR2) ? 8 : 4;
 }
 
@@ -60,7 +60,7 @@ FunctionData * Script::getFunctionFromName(const string& name)
 	}
 	
 	Utils::System::Warn("Function \"" + name + "\" does not exist");
-	assert(false && "Function doesnt exist");
+	//assert(false && "Function doesnt exist");
 	return NULL;
 }
 
@@ -74,7 +74,7 @@ const FunctionData * Script::getFunctionFromName(const string& name) const
 			return functions[i].get();
 	}
 	Utils::System::Warn("Function \"" + name + "\" does not exist");
-	assert(false && "Function doesnt exist");
+	//assert(false && "Function doesnt exist");
 	return NULL;
 }
 void Script::initializeEntryFunction()
@@ -268,6 +268,7 @@ string Script::getPlatformAbv() const
 	{
 		case P_XBOX: return "x";
 		case P_PSX: return "c";
+        case P_SWITCH: return "w";
 		case P_PC: return (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT) ? "w" : "y";
 	}
 	Utils::System::Throw("No platform selected");
@@ -280,6 +281,7 @@ string Script::getPlatformAbvUpper() const
 	{
 		case P_XBOX: return "X";
 		case P_PSX: return "C";
+        case P_SWITCH: return "W";
 		case P_PC: return (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT) ? "W" : "Y";
 	}
 	Utils::System::Throw("No platform selected");

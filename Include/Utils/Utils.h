@@ -113,9 +113,8 @@ namespace Utils {
 	namespace Compression
 	{
 		int32_t XCompress_Decompress(uint8_t* compressedData, uint64_t compressedLen, uint8_t* decompressedData, uint64_t* decompressedLen);
-
 		int32_t XCompress_Compress(uint8_t* Data, uint64_t DataLen, uint8_t* CompressedData, uint64_t* OutCompressedLen);
-
+        void ZStandard_Compress(uint8_t* Data, uint64_t DataLen, std::vector<uint8_t>& CompressedData, uint64_t* OutCompressedLen);
 		void ZLIB_Decompress(const std::vector<uint8_t>& in, std::vector<uint8_t> &out);
         void ZLIB_Compress(const std::vector<uint8_t>& in, std::vector<uint8_t> &out);
 		std::string ZLIB_ErrorCodeToStr(int32_t errorcode);

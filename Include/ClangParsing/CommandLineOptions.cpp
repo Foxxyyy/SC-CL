@@ -19,7 +19,8 @@ namespace SCCL
 		ValueRequired,
 		cat(CompilerOptions),
 		values(
-		clEnumValN(Platform::P_XBOX, "XBOX", "Target Xbox"),
+		clEnumValN(Platform::P_XBOX, "X360", "Target Xbox"),
+        clEnumValN(Platform::P_SWITCH, "SWITCH", "Target Nintendo Switch"),
 		clEnumValN(Platform::P_PSX, "PSX", "Target Playstation"),
 		clEnumValN(Platform::P_PC, "PC", "Target PC")
 	));

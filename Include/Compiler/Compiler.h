@@ -455,9 +455,12 @@ protected:
 	{
 		//Set Endian
 		const int BT = HLData->getBuildType();
-		if ((HLData->getBuildPlatform() == Platform::P_PC && BT == BT_GTAV) || BT == BT_RDR2 || (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT))
+		if ((HLData->getBuildPlatform() == Platform::P_PC && BT == BT_GTAV) || (HLData->getBuildPlatform() == Platform::P_SWITCH && BT == BT_RDR_XSC) || BT == BT_RDR2 || (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT))
 		{
-			CodePageData = std::make_unique<CodePageCollectionLit>();
+            if ((HLData->getBuildPlatform() == Platform::P_SWITCH && BT == BT_RDR_XSC))
+				CodePageData = std::make_unique<CodePageCollectionBig>();
+			else
+				CodePageData = std::make_unique<CodePageCollectionLit>();
 			AddInt32toBuff = &CompileBase::AddInt32toBuffL;
 			ChangeInt32inBuff = &CompileBase::ChangeInt32inBuffL;
 			AddInt64toBuff = &CompileBase::AddInt64toBuffL;

@@ -11,6 +11,7 @@
 #include "ConsoleColor.h"
 #include <filesystem>
 #include "Compression/xcompress.h"
+#include "Compression/zstd.h"
 
 using namespace std;
 using namespace Utils::System;
@@ -395,6 +396,13 @@ namespace Utils
             return hr;
         }
 
+        void ZStandard_Compress(uint8_t* Data, uint64_t DataLen, std::vector<uint8_t>& CompressedData, uint64_t* OutCompressedLen)
+        {
+            size_t compress_size = ZSTD_compressBound(DataLen);
+            CompressedData.resize(compress_size);
+            uint64_t size = ZSTD_compress(CompressedData.data(), compress_size, Data, DataLen, 22);
+            *OutCompressedLen = size;
+        }
 
 #define CHUNK 16384
 
